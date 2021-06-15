@@ -92,6 +92,10 @@ class KBHit:
             dr,dw,de = select([sys.stdin], [], [], 0)
             return dr != []
 
+    def clearBuffer(self):
+        #sys.stdin.flush()
+        termios.tcflush(sys.stdin, termios.TCIOFLUSH)
+
 
 # Test    
 # if __name__ == "__main__":

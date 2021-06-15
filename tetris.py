@@ -8,9 +8,7 @@ import random
 import copy
 from kbhit import KBHit
 
-# TODO - 
-# at higher speeds post-collision revert leads to gaps in rows
-# continuous key presses
+# TODO - continuous key presses - imperfect solution implemented -> cleaqr input buffer 
 class Tetris():
     """
     Tetris in the terminal.
@@ -115,9 +113,8 @@ class Tetris():
 
     def update(self, delta, input):
         # Save curr pos of active obj
-        active_obj_prev_data = copy.deepcopy(self.active_obj)
+        active_obj_prev_pos = self.active_obj['pos'].copy()#copy.deepcopy(self.active_obj)
         # Clear curr_pos of active obj using blit_screen
-        #self.blit_screen(self.active_obj['pos'] , np.full_like(self.active_obj['arr'],' '))
         self.blit_object(self.active_obj['pos'], self.active_obj['arr'], clear=True)
 
         # HANDLE INPUT : calc. new pos using input & delta -> check if moving out of screen
@@ -134,27 +131,32 @@ class Tetris():
         if input == 'right':
             self.active_obj['pos'][1] += 1
         
-        self.active_obj['pos'][0] += self.curr_speed 
-        
-        # Check for collisions and boundary conditions
-        collisionChar = self.check_collision()
-        if collisionChar != '':
-            # revert to prev pos
-            self.active_obj = copy.deepcopy(active_obj_prev_data)
-            # check if there are complete rows & update score
-            completed_rows = self.check_rows()
-            self.score += len(completed_rows)
-            # Clear complete rows, bring the upper rows down
-            if len(completed_rows) > 0:
-                for i in completed_rows:
-                    # shift upper rows down by 1 row
-                    self.blit_screen([2,1], self.screen[1:i,1:-1])
-                    # Fill Empty row at top - NOT NEEDED
-                    #self.blit_screen([1,1], [' '*(self.width-2)])
-            if (collisionChar =='g') or (collisionChar == self.block_char):
-                # Blit old obj to screen before spawning new obj
-                self.blit_object(self.active_obj['pos'] , self.active_obj['arr'])
-                self.spawn_new_block_obj()
+        # avoiding object jump at high speeds, forcing collision check
+        for i in range(self.curr_speed):
+            self.active_obj['pos'][0] += 1
+            
+            # Check for collisions and boundary conditions
+            collisionChar = self.check_collision()
+            if collisionChar != '':
+                # revert to prev pos
+                self.active_obj['pos'][0] -= 1
+                self.active_obj['pos'][1] = active_obj_prev_pos[1]
+
+                # check if there are complete rows & update score
+                completed_rows = self.check_rows()
+                self.score += len(completed_rows)
+                # Clear complete rows, bring the upper rows down
+                if len(completed_rows) > 0:
+                    for i in completed_rows:
+                        # shift upper rows down by 1 row
+                        self.blit_screen([2,1], self.screen[1:i,1:-1])
+                        # Fill Empty row at top - NOT NEEDED
+                        #self.blit_screen([1,1], [' '*(self.width-2)])
+                if (collisionChar =='g') or (collisionChar == self.block_char):
+                    # Blit old obj to screen before spawning new obj
+                    self.blit_object(self.active_obj['pos'] , self.active_obj['arr'])
+                    self.spawn_new_block_obj()
+                break
 
         # Write active_obj to new_pos using blit_screen
         self.blit_object(self.active_obj['pos'] , self.active_obj['arr'])
@@ -209,14 +211,15 @@ class Tetris():
             while self.game_running:
 
                 curr_input = ''
+                kb_input=''
                 if self.keyboard.kbhit():
-                    c = self.keyboard.getch()
-                    if ord(c) == 27: # ESC
+                    kb_input = self.keyboard.getch()
+                    if ord(kb_input) == 27: # ESC
                         break
-                    self.input_queue.put(c)
+                    #self.input_queue.put(c)
 
-                if not self.input_queue.empty():
-                    curr_input = self.input_controls.get(self.input_queue.get())
+                #if not self.input_queue.empty():
+                curr_input = self.input_controls.get(kb_input)#self.input_queue.get())
 
                 # Create new object
                 if self.active_obj['type'] == None:
@@ -229,6 +232,7 @@ class Tetris():
                 
                 self.update(self.get_timestamp()-self.last_render_timestamp, curr_input)
                 self.render()
+                self.keyboard.clearBuffer()
                 time.sleep(0.2)
         except Exception as e:
             print(e)
