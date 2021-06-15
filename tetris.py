@@ -42,7 +42,7 @@ class Tetris():
         self.screen[0,0], self.screen[0,(self.width-1)], self.screen[(self.height-1),(self.width-1)], self.screen[(self.height-1),0] = '/','\\','/','\\' 
         
 
-        self.input_queue = queue.Queue()
+        #self.input_queue = queue.Queue()
         self.game_running = False
         self.input_controls = {'s':'down', 'a':'left', 'd':'right', 'w':'up', 'e':'clockwise', 'q':'anti_clockwise'}
         
@@ -162,10 +162,10 @@ class Tetris():
         self.blit_object(self.active_obj['pos'] , self.active_obj['arr'])
         return 
 
-    def input_loop(self):
-        while self.game_running:
-            self.input_queue.put(sys.stdin.read(1))
-        return
+    # def input_loop(self):
+    #     while self.game_running:
+    #         self.input_queue.put(sys.stdin.read(1))
+    #     return
 
     def check_collision(self):
         # If overlap with 'X' or boundary_chars then true

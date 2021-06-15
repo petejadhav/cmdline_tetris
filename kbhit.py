@@ -93,7 +93,10 @@ class KBHit:
             return dr != []
 
     def clearBuffer(self):
-        #sys.stdin.flush()
+        if os.name =='nt':
+            while msvcrt.kbhit():
+                msvcrt.getch()
+        # For unix 
         termios.tcflush(sys.stdin, termios.TCIOFLUSH)
 
 
